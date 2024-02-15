@@ -7,13 +7,33 @@ import NumberKeyboard from './NumberKeyboard';
 import SaleTable from './SaleTable';
 import salesTable from '../../Database/salesTable';
 import { useSale } from '../../context/SaleProvider';
+import customerTable from '../../Database/customerTable';
+import { MessageModalNormal } from '../MessageModal';
+import breakAmountTable from '../../Database/breakamount';
 
-const SaleView = () => {
+const SaleView = ({navigation}) => {
 
-    const [vcno, setvcno] : react.SetStateAction<String> = react.useState('');
+    const [vcno, setvcno]: react.SetStateAction<String> = react.useState('');
     const [customername, setCustomerName] = react.useState('');
+    const [customers, setCustomers] = react.useState([]);
+    const [cshow, setCShow] = react.useState(false);
 
-    const { cart , clearCart } : any = useSale();
+    const [breakamount, setBreakAmount] = react.useState(0);
+    const [actualba, setActualba] = react.useState(0);
+
+
+    const getBreakAmount = () => {
+       breakAmountTable.getLastBreakAmount().then((data: any) => {
+            setActualba(parseInt(data));
+        });
+    }
+
+
+    const { cart, clearCart }: any = useSale();
+
+    const getAllCustomer = async () => {
+        await customerTable.getAllCustomer(setCustomers);
+    }
 
     const getLastVoucherNumber = () => {
         salesTable.getLastVoucherNumber().then((data: any) => {
@@ -23,35 +43,59 @@ const SaleView = () => {
 
     useEffect(() => {
         getLastVoucherNumber();
+        getAllCustomer();
+        getBreakAmount();
     }, [])
 
-    const SaveToDatabase = ()=>{
-        if(cart.length == 0) return Alert.alert('','Cart is Empty');
+    const SaveToDatabase = () => {
+        if (cart.length == 0) return Alert.alert('', 'Cart is Empty');
         Vibration.vibrate(100)
         let date = new Date();
         let formatdate = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate();
-      
-        cart?.map((item : any)=>{
-            if(item.isR){
+
+        cart?.map((item: any) => {
+            if (item.isR) {
 
                 let permutation = getPermutations(item.number);
 
-                permutation.map((num : any)=>{
+                permutation.map((num: any) => {
                     salesTable.insertSales(customername, num, item.amount, formatdate, vcno)
                 });
-              
-            }else{
-                salesTable.insertSales(customername,item.number, item.amount, formatdate, vcno)
+
+            } else {
+                salesTable.insertSales(customername, item.number, item.amount, formatdate, vcno)
             }
         })
 
         getLastVoucherNumber();
+        navigation.navigate("VoucherView",{customer:customername,vcno:vcno,number:cart});
         clearCart();
+        setCustomerName('')
     }
 
 
     return (
         <View style={{ flex: 1, backgroundColor: '#f0f0f0' }}>
+            <MessageModalNormal
+                show={cshow}
+                onClose={() => setCShow(false)}
+            >
+                <View style={{ padding: 10 }}>
+                    <Text style={{ ...STYLES.bold_text, fontSize: 20 }}>Customer List</Text>
+                    {customers.map((item: any, index: any) => {
+                        return (
+                            <TouchableOpacity key={index} style={{ padding: 10, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' }} onPress={() => {
+                                setCustomerName(item.name);
+                                setCShow(false);
+                                Vibration.vibrate(100)
+                            }}>
+                                <Text style={{ ...STYLES.normal_label }}>{item.name}</Text>
+                            </TouchableOpacity>
+                        )
+                    })
+                    }
+                </View>
+            </MessageModalNormal>
             <View style={{
                 flexDirection: 'column', backgroundColor: 'white', shadowColor: '#000',
                 shadowOffset: {
@@ -64,14 +108,20 @@ const SaleView = () => {
             }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', padding: 10 }}>
                     <Text style={{ ...STYLES.title }}>Sale  </Text>
-                    <View style={{ marginLeft: 'auto', flexDirection: 'row' }}>
-                        <TextInput 
-                        value={customername}
-                        onChangeText={(text) => setCustomerName(text)}
-                        placeholderTextColor={'#000'}
-                        style={{ ...STYLES.bold_text, padding: 5, backgroundColor: '#f0f0f0', borderRadius: 5, width: 200, marginRight: 5 }} placeholder="Customer Name" />
+                    <View style={{ marginLeft: 'auto', flexDirection: 'row', alignItems: 'center' }}>
+                        <View
+                            style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f0f0f0', marginRight: 5, paddingRight: 5, borderRadius: 5 }}>
+                            <TextInput
+                                value={customername}
+                                onChangeText={(text) => setCustomerName(text)}
+                                placeholderTextColor={'#000'}
+                                style={{ ...STYLES.bold_text, padding: 5, backgroundColor: '#f0f0f0', borderRadius: 5, width: 150, marginRight: 5 }} placeholder="Customer Name" />
+                            <TouchableOpacity onPress={()=> setCShow(true)}>
+                                <Icons name="person" size={18} color="black" />
+                            </TouchableOpacity>
 
-                        <TouchableOpacity style={{ ...STYLES.button, flexDirection: 'row' }} onPress={()=> SaveToDatabase()}>
+                        </View>
+                        <TouchableOpacity style={{ ...STYLES.button, flexDirection: 'row' }} onPress={() => SaveToDatabase()}>
                             <Icons name="save-outline" size={20} color="white" />
                             <Text style={{ ...STYLES.normal_label, color: 'white', marginLeft: 5 }}>Save</Text>
                         </TouchableOpacity>
@@ -83,7 +133,7 @@ const SaleView = () => {
                     flexDirection: 'row'
 
                 }}>
-                    <Text style={{ ...STYLES.normal_label, alignItems: 'center', textAlign: 'center' }}>Break Amount : {33000}  </Text>
+                    <Text style={{ ...STYLES.normal_label, alignItems: 'center', textAlign: 'center' }}>Break Amount : {breakamount} / {actualba}  </Text>
                     <Text style={{ ...STYLES.normal_label, alignItems: 'center', textAlign: 'center', marginLeft: 'auto' }}>Voucher No : {vcno}</Text>
                     <TouchableOpacity style={{
                         backgroundColor: 'red',
@@ -105,7 +155,7 @@ const SaleView = () => {
 
             <SaleTable />
 
-            <NumberKeyboard />
+            <NumberKeyboard ba={breakamount} setBa={setBreakAmount}/>
         </View>
     )
 }

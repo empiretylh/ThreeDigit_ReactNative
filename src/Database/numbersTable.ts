@@ -34,7 +34,7 @@ const insertNumbers = () => {
                     `INSERT OR IGNORE INTO numbers (number) VALUES (?)`,
                     [number],
                     () => {
-                        console.log('Number inserted');
+                        // console.log('Number inserted');
                     },
                     (error) => {
                         console.log(error);
@@ -103,7 +103,7 @@ const getNumbers = (setNumbers: any) => {
                 `SELECT * FROM numbers`,
                 [],
                 (_, { rows }) => {
-
+                    console.log("getting numbers again")
                     setNumbers(rows.raw);
                 },
                 (error) => {
@@ -114,5 +114,55 @@ const getNumbers = (setNumbers: any) => {
     }
 };
 
-const numbersTable = { createNumbersTable, insertNumbers, getNumbers, updateAmount, updateAmountMinus, RemoveAllAmount };
-export default numbersTable;
+const getNumbersAsync = () => {
+    return new Promise((resolve, reject) => {
+        if (db) {
+            db.transaction((tx) => {
+                tx.executeSql(
+                    `SELECT * FROM numbers`,
+                    [],
+                    (_, { rows }) => {
+                        let result = []
+                       
+                        if(rows.length > 0){
+                            for (let i = 0; i < rows.length; i++) {
+                                result.push(rows.item(i));
+                            }
+                        }
+                        resolve(result);
+                    },
+                    (error) => {
+                        console.log(error);
+                        reject(error);
+                    }
+                );
+            });
+        }
+    });
+}
+
+const getAmountByNumber = (number: string) => {
+    return new Promise((resolve, reject) => {
+        if (db) {
+            db.transaction((tx) => {
+                tx.executeSql(
+                    `SELECT amount FROM numbers WHERE number = ?`,
+                    [number],
+                    (_, { rows }) => {
+                       
+                        resolve(rows.raw);
+                    },
+                    (error) => {
+                        console.log(error);
+                        reject(error);
+                    }
+                );
+            });
+        }
+    }
+
+    );
+}
+
+    const numbersTable = { createNumbersTable, insertNumbers, getNumbers,getNumbersAsync, getAmountByNumber, updateAmount, updateAmountMinus, RemoveAllAmount };
+    export default numbersTable;

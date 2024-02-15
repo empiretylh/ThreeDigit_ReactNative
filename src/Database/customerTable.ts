@@ -7,7 +7,7 @@ const createCustomerTable = () => {
             tx.executeSql(
                 `CREATE TABLE IF NOT EXISTS customer (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        name TEXT,
+                        name TEXT unique,
                         phone TEXT
                 )`,
                 [],
@@ -46,7 +46,7 @@ const insertCustomer = (name: string, phone: string) => {
     if (db) {
         db.transaction((tx) => {
             tx.executeSql(
-                `INSERT INTO customer (name, phone) VALUES (?, ?)`,
+                `INSERT OR IGNORE INTO customer (name, phone) VALUES (?, ?)`,
                 [name, phone],
                 () => {
                     console.log('Customer inserted');
@@ -60,7 +60,7 @@ const insertCustomer = (name: string, phone: string) => {
 }
 
 // Select All Customer
-const getAllCustomer = () => {
+const getAllCustomer = (setData) => {
     return new Promise((resolve, reject) => {
         if (db) {
             db.transaction((tx) => {
@@ -68,7 +68,7 @@ const getAllCustomer = () => {
                     `SELECT * FROM customer`,
                     [],
                     (tx, result) => {
-                        resolve(result);
+                        setData(result.rows.raw);
                     },
                     (error) => {
                         reject(error);

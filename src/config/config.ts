@@ -1,6 +1,6 @@
 import { StyleSheet } from "react-native";
 
-export const appname = 'Sale Digits';
+export const appname = 'Three Digits';
 export const appversion = '1.0.0';
 
 

@@ -1,11 +1,11 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, Button, TouchableOpacity, TextInput, FlatList } from 'react-native';
-import salesTable from '../Database/salesTable';
-import numbersTable from '../Database/numbersTable';
+import { View, Text, StyleSheet, Button, TouchableOpacity, TextInput, FlatList, Vibration } from 'react-native';
+import salesTable from '../../Database/salesTable';
+import numbersTable from '../../Database/numbersTable';
 import Icons from 'react-native-vector-icons/Ionicons';
-import { STYLES } from '../config/config';
-import breakAmountTable from '../Database/breakamount';
-import { MessageModalNormal } from './MessageModal';
+import { STYLES } from '../../config/config';
+import breakAmountTable from '../../Database/breakamount';
+import { MessageModalNormal } from '../MessageModal';
 
 const NumberView = ({ navigation }) => {
 
@@ -81,11 +81,11 @@ const NumberView = ({ navigation }) => {
 
     const RenderNumberItem = (item: any, index: number) => {
         return (
-            <View key={index} style={{ flexDirection: 'row', padding: 10, backgroundColor: 'white', borderWidth: 1 }}>
+            <TouchableOpacity onPress={()=>{ navigation.navigate('NumberDetail',{number: item.number}); Vibration.vibrate(100)}} key={index} style={{ flexDirection: 'row', padding: 10, backgroundColor: 'white', borderWidth: 1 }}>
                 <Text style={{ ...STYLES.title, fontSize: 25, flex: 1, textAlign: 'center' }}>{item.number}</Text>
                 <Text style={{ ...STYLES.title, fontSize: 25, flex: 1, textAlign: 'right' }}>{numberWithCommas(item.amount)}</Text>
                 <Text style={{ ...STYLES.title, fontSize: 25, flex: 1, textAlign: 'right', color: parseInt(item.amount) > parseInt(ba) ? 'red' : 'black' }}>{numberWithCommas(computeExtraAmount(item.amount, ba))}</Text>
-            </View>
+            </TouchableOpacity>
         )
     }
 
@@ -134,10 +134,10 @@ const NumberView = ({ navigation }) => {
                         <Text style={{ ...STYLES.title, fontSize: 18, color: 'black' }}>Amount Descending</Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => { setFilterType('minus-amount-asc'); setFilterShow(false) }} style={{ ...STYLES.button, backgroundColor: filterType == 'minus-amount-asc' ? '#9cd9be' : '#f0f0f0', margin: 5 }}>
-                        <Text style={{ ...STYLES.title, fontSize: 18, color: 'black' }}>Minus Amount Ascending</Text>
+                        <Text style={{ ...STYLES.title, fontSize: 18, color: 'black' }}>Extra Amount Ascending</Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => { setFilterType('minus-amount-desc'); setFilterShow(false) }} style={{ ...STYLES.button, backgroundColor: filterType == 'minus-amount-desc' ? '#9cd9be' : '#f0f0f0', margin: 5 }}>
-                        <Text style={{ ...STYLES.title, fontSize: 18, color: 'black' }}>Minus Amount Descending</Text>
+                        <Text style={{ ...STYLES.title, fontSize: 18, color: 'black' }}>Extra Amount Descending</Text>
                     </TouchableOpacity>
                 </View>
             </MessageModalNormal>
@@ -152,7 +152,7 @@ const NumberView = ({ navigation }) => {
                 shadowRadius: 3.84,
                 elevation: 5
             }}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={{ justifyContent: 'center', alignItems: 'center', padding: 5, margin: 5, borderRadius: 10 }}>
+                <TouchableOpacity onPress={() => {navigation.goBack(); Vibration.vibrate(100)}} style={{ justifyContent: 'center', alignItems: 'center', padding: 5, margin: 5, borderRadius: 10 }}>
                     <Icons name="arrow-back" size={30} color="black" />
                 </TouchableOpacity>
                 <Text style={{ ...STYLES.title, fontSize: 20 }}>Numbers</Text>

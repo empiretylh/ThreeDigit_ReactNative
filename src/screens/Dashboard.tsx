@@ -1,53 +1,208 @@
-import React, { useState } from 'react';
-import { Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Text, TouchableOpacity, StyleSheet, Image, Alert, Linking, ToastAndroid, Vibration } from 'react-native';
 import { View, Button } from '@ant-design/react-native';
 import { IMAGE, STYLES, appname } from '../config/config';
+import salesTable from '../Database/salesTable';
+import numbersTable from '../Database/numbersTable';
+import RNHTMLtoPDF from 'react-native-html-to-pdf';
+import FileViewer from 'react-native-file-viewer';
+import Icons from 'react-native-vector-icons/Ionicons';
+import { BLEPrinter } from 'react-native-thermal-receipt-printer-image-qr';
 
+import EncryptedStorage from 'react-native-encrypted-storage';
+import { useLogin } from '../context/LoginProvider';
 const Dashboard: React.FC = ({ navigation }) => {
-    const [count, setCount] = useState(0);
+
+    const [isPrinterConnet, setIsPrinterConnet] = useState(false);
+
+    const { isLogged, setIsLogged } = useLogin();
+    useEffect(() => {
+        EncryptedStorage.getItem('printer').then((encydata: any) => {
+            BLEPrinter.init().then((data: any) => {
+                BLEPrinter.connectPrinter(encydata).then((data: any) => {
+                    ToastAndroid.show("Printer Connected", ToastAndroid.SHORT);
+                    setIsPrinterConnet(true);
+                });
+            });
+        });
+
+    }, []);
+
+
+
+    const exportPDFNumberTable = async () => {
+
+        let numbers = await numbersTable.getNumbersAsync();
+
+        console.log(numbers);
+
+        let options = {
+            html: '<div align="center"><table border="1"><tr><th>Number</th><th>Amount</th></tr>' + numbers.map((item: any) => {
+                return '<tr><td>' + item.number + '</td><td>' + item.amount + '</td></tr>'
+            }).join('') + '</table></div>',
+            fileName: 'Number',
+            directory: 'Documents',
+        };
+
+        let file = await RNHTMLtoPDF.convert(options);
+
+        FileViewer.open(file.filePath)
+            .then(() => {
+                // success
+            })
+            .catch(error => {
+                // error
+            });
+    }
+
+
+
+    const DeleteAll = () => {
+        Alert.alert('Delete All', 'Are you sure to delete all data?', [
+            { text: 'No', onPress: () => { } },
+            {
+                text: 'Yes', onPress: () => {
+                    salesTable.deletAllSales();
+                    numbersTable.RemoveAllAmount();
+                }
+            }
+        ]);
+
+    }
+
+
 
     return (
         <View style={styles.container}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Image source={IMAGE.icon} style={{ width: 50, height: 50, marginRight: 10 }} />
+            <View style={{ flexDirection: 'row', alignItems: 'center',  
+            padding:10,
+            backgroundColor:'white',
+            shadowColor: "#000",
+            shadowOffset: {
+                width: 0,
+                height: 2,
+            },
+            shadowOpacity: 0.25,
+            shadowRadius: 3.84,
+            elevation: 5, 
+        
+        }}>
+                <Image source={IMAGE.icon} style={{ width: 40, height: 40, marginRight: 10 }} />
                 <Text style={styles.title}>{appname}</Text>
+                <TouchableOpacity
+                    onPress={() => {
+                        EncryptedStorage.removeItem('login');
+                        setIsLogged(false);
+                        Vibration.vibrate(100);
+                    }}
+                    style={{ marginLeft: 'auto' }}>
+                    <Icons name="log-out-outline" size={30} color="red" />
+                </TouchableOpacity>
             </View>
 
 
             <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 10, alignItems: 'center' }}>
 
                 <TouchableOpacity style={{
+                    flex: 1,
                     flexDirection: 'row',
                     justifyContent: 'center',
                     alignItems: 'center',
+                    height: 100,
+                    flexGrow: 2,
                     padding: 10,
                     margin: 5,
-                    backgroundColor: 'blue',
+                    backgroundColor: 'green',
                     borderRadius: 10,
                 }}
                     onPress={() => navigation.navigate('Sale')}
                 >
+                    <Icons name="add-circle-outline" size={30} color="white" />
 
-                    <Text style={{ ...STYLES.title, color: 'white', textAlign: 'center' }}>Sale</Text>
+                    <Text style={{ ...STYLES.title, color: 'white', textAlign: 'center', marginLeft: 8 }}>Sale</Text>
 
                 </TouchableOpacity>
 
+
                 <TouchableOpacity style={{
-                    flexDirection: 'row',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    flex: 1,
+                    height: 100,
+                    padding: 10,
+                    margin: 5,
+                    backgroundColor: '#03a1fc',
+                    borderRadius: 10,
+                }}
+                    onPress={() => navigation.navigate('Customer')}
+                >
+                    <Icons name="people-outline" size={30} color="white" />
+                    <Text style={{ ...STYLES.title, color: 'white', textAlign: 'center' }}>Customer</Text>
+
+                </TouchableOpacity>
+            </View>
+            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
+                <TouchableOpacity style={{
+                    flexDirection: 'column',
                     justifyContent: 'center',
                     alignItems: 'center',
                     padding: 10,
                     margin: 5,
-                    backgroundColor: 'blue',
+                    backgroundColor: '#3e04bd',
                     borderRadius: 10,
+                    flex: 1,
+                    height: 100,
                 }}
-                onPress={()=> navigation.navigate('AllNumber')}
+                    onPress={() => navigation.navigate('AllNumber')}
                 >
+                    <Icons name="list-circle-outline" size={30} color="white" />
 
                     <Text style={{ ...STYLES.title, color: 'white', textAlign: 'center' }}>Number</Text>
 
                 </TouchableOpacity>
+                <TouchableOpacity
+                    onPress={() => navigation.navigate('CustomerDetail')}
+                    style={{
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        padding: 10,
+                        margin: 5,
+                        backgroundColor: '#a84702',
+                        borderRadius: 10,
+                        height: 100,
+                    }}>
+                    <Icons name="person-circle-outline" size={30} color="white" />
 
+                    <Text style={{ ...STYLES.title, color: 'white', textAlign: 'center' }}>Customer Details</Text>
+
+                </TouchableOpacity>
+
+
+
+
+
+            </View>
+            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
+                <TouchableOpacity style={{
+                    flexDirection: 'row',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    padding: 10,
+                    margin: 5,
+                    backgroundColor: '#e0c10d',
+                    flex: 1,
+                    height: 100,
+                    borderRadius: 10,
+                }}
+                    onPress={() => navigation.navigate('AllReport')}
+                >
+                    <Icons name="document-text-outline" size={30} color="white" />
+
+                    <Text style={{ ...STYLES.title, color: 'white', textAlign: 'center', marginLeft: 5 }}>All Report</Text>
+
+                </TouchableOpacity>
 
             </View>
             <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
@@ -58,13 +213,38 @@ const Dashboard: React.FC = ({ navigation }) => {
                     alignItems: 'center',
                     padding: 10,
                     margin: 5,
-                    backgroundColor: 'blue',
+                    backgroundColor: '#eb17cb',
                     borderRadius: 10,
-                }}>
-
-                    <Text style={{ ...STYLES.title, color: 'white', textAlign: 'center' }}>Customer အမည်</Text>
+                    flex: 1,
+                    height: 100,
+                }}
+                    onPress={exportPDFNumberTable}
+                >
+                    <Icons name="document-text-outline" size={30} color="white" />
+                    <Text style={{ ...STYLES.title, color: 'white', textAlign: 'center' }}>PDF</Text>
 
                 </TouchableOpacity>
+
+            
+
+                <TouchableOpacity onPress={DeleteAll} style={{
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    padding: 10,
+                    margin: 5,
+                    backgroundColor: 'red',
+                    flex: 1,
+                    height: 100,
+                    borderRadius: 10,
+                }}>
+                    <Icons name="trash-outline" size={30} color="white" />
+                    <Text style={{ ...STYLES.title, color: 'white', textAlign: 'center' }}>Delete All</Text>
+
+                </TouchableOpacity>
+            </View>   
+            
+             <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
 
                 <TouchableOpacity style={{
                     flexDirection: 'row',
@@ -72,79 +252,18 @@ const Dashboard: React.FC = ({ navigation }) => {
                     alignItems: 'center',
                     padding: 10,
                     margin: 5,
-                    backgroundColor: 'blue',
+                    backgroundColor: '#eb5e17',
                     borderRadius: 10,
-                }}>
-
-                    <Text style={{ ...STYLES.title, color: 'white', textAlign: 'center' }}>Customer Details</Text>
-
+                    flex: 1,
+                    height: 100,
+                }}
+                    onPress={() => navigation.navigate('PrinterView')}
+                >
+                    <Icons name="print-outline" size={30} color="white" />
+                    <Text style={{ ...STYLES.title, color: 'white', textAlign: 'center' }}> Printer</Text>
                 </TouchableOpacity>
 
-
-            </View>
-            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
-
-                <TouchableOpacity style={{
-                    flexDirection: 'row',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    padding: 10,
-                    margin: 5,
-                    backgroundColor: 'blue',
-                    borderRadius: 10,
-                }}>
-
-                    <Text style={{ ...STYLES.title, color: 'white', textAlign: 'center' }}>Customer အမည်</Text>
-
-                </TouchableOpacity>
-
-                <TouchableOpacity style={{
-                    flexDirection: 'row',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    padding: 10,
-                    margin: 5,
-                    backgroundColor: 'blue',
-                    borderRadius: 10,
-                }}>
-
-                    <Text style={{ ...STYLES.title, color: 'white', textAlign: 'center' }}>Customer Details</Text>
-
-                </TouchableOpacity>
-
-
-            </View>
-            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
-
-                <TouchableOpacity style={{
-                    flexDirection: 'row',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    padding: 10,
-                    margin: 5,
-                    backgroundColor: 'blue',
-                    borderRadius: 10,
-                }}>
-
-                    <Text style={{ ...STYLES.title, color: 'white', textAlign: 'center' }}>Customer အမည်</Text>
-
-                </TouchableOpacity>
-
-                <TouchableOpacity style={{
-                    flexDirection: 'row',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    padding: 10,
-                    margin: 5,
-                    backgroundColor: 'blue',
-                    borderRadius: 10,
-                }}>
-
-                    <Text style={{ ...STYLES.title, color: 'white', textAlign: 'center' }}>Customer Details</Text>
-
-                </TouchableOpacity>
-
-
+                
             </View>
 
 
@@ -155,7 +274,8 @@ const Dashboard: React.FC = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 10,
+       
+        backgroundColor: 'white'
     },
     title: {
         fontSize: 24,
