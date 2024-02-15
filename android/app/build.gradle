@@ -88,7 +88,15 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+
+        release {
+           storeFile file('threedigits.keystore')
+           storePassword 'threedigits'
+           keyAlias 'threedigits'
+           keyPassword 'threedigits'
+        }
     }
+
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
