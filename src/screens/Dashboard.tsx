@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Text, TouchableOpacity, StyleSheet, Image, Alert, Linking, ToastAndroid, Vibration } from 'react-native';
+import { Text, TouchableOpacity, StyleSheet, Image, Alert, Linking, ToastAndroid, Vibration , PermissionsAndroid} from 'react-native';
 import { View, Button } from '@ant-design/react-native';
 import { IMAGE, STYLES, appname } from '../config/config';
 import salesTable from '../Database/salesTable';
@@ -16,7 +16,20 @@ const Dashboard: React.FC = ({ navigation }) => {
     const [isPrinterConnet, setIsPrinterConnet] = useState(false);
 
     const { isLogged, setIsLogged } = useLogin();
+
+    const requestPermission = async () => {
+        const granted = PermissionsAndroid.requestMultiple([PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT, PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN, PermissionsAndroid.PERMISSIONS.BLUETOOTH_ADVERTISE])
+
+        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+            console.log('You can use the Bluetooth');
+        } else {
+            console.log('Bluetooth permission denied');
+        }
+    }
+
     useEffect(() => {
+
+        requestPermission();
         EncryptedStorage.getItem('printer').then((encydata: any) => {
             BLEPrinter.init().then((data: any) => {
                 BLEPrinter.connectPrinter(encydata).then((data: any) => {
@@ -26,7 +39,13 @@ const Dashboard: React.FC = ({ navigation }) => {
             });
         });
 
+
     }, []);
+
+
+
+
+
 
 
 
@@ -74,19 +93,20 @@ const Dashboard: React.FC = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
-            <View style={{ flexDirection: 'row', alignItems: 'center',  
-            padding:10,
-            backgroundColor:'white',
-            shadowColor: "#000",
-            shadowOffset: {
-                width: 0,
-                height: 2,
-            },
-            shadowOpacity: 0.25,
-            shadowRadius: 3.84,
-            elevation: 5, 
-        
-        }}>
+            <View style={{
+                flexDirection: 'row', alignItems: 'center',
+                padding: 10,
+                backgroundColor: 'white',
+                shadowColor: "#000",
+                shadowOffset: {
+                    width: 0,
+                    height: 2,
+                },
+                shadowOpacity: 0.25,
+                shadowRadius: 3.84,
+                elevation: 5,
+
+            }}>
                 <Image source={IMAGE.icon} style={{ width: 40, height: 40, marginRight: 10 }} />
                 <Text style={styles.title}>{appname}</Text>
                 <TouchableOpacity
@@ -225,7 +245,7 @@ const Dashboard: React.FC = ({ navigation }) => {
 
                 </TouchableOpacity>
 
-            
+
 
                 <TouchableOpacity onPress={DeleteAll} style={{
                     flexDirection: 'column',
@@ -242,9 +262,9 @@ const Dashboard: React.FC = ({ navigation }) => {
                     <Text style={{ ...STYLES.title, color: 'white', textAlign: 'center' }}>Delete All</Text>
 
                 </TouchableOpacity>
-            </View>   
-            
-             <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
+            </View>
+
+            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
 
                 <TouchableOpacity style={{
                     flexDirection: 'row',
@@ -263,7 +283,7 @@ const Dashboard: React.FC = ({ navigation }) => {
                     <Text style={{ ...STYLES.title, color: 'white', textAlign: 'center' }}> Printer</Text>
                 </TouchableOpacity>
 
-                
+
             </View>
 
 
@@ -274,7 +294,7 @@ const Dashboard: React.FC = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-       
+
         backgroundColor: 'white'
     },
     title: {
