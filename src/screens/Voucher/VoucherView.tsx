@@ -10,11 +10,12 @@ const VoucherView = ({ navigation, route }) => {
     const { customer, vcno, number } = route.params;
 
     const computePermutLength = (str: string) => {
+        let num = getPermutations(str);
+        console.log("R Length : ", num.length, num)
         return getPermutations(str).length;
     }
 
     const viewRef = useRef();
-
     const captureImage = async () => {
         const uri = await ViewShot.captureRef(viewRef, {
             result: "base64",
@@ -76,7 +77,7 @@ const VoucherView = ({ navigation, route }) => {
         let total = 0;
         number.map((item) => {
             if (item.isR) {
-                total += parseInt(item.amount) * parseInt(computePermutLength(item.amount));
+                total += parseInt(item.amount) * parseInt(computePermutLength(item.number));
             } else {
                 total += parseInt(item.amount);
             }
