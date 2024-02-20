@@ -28,7 +28,7 @@ const styles = StyleSheet.create({
 
 })
 
-const NumberKeyboard = ({ ba, setBa }) => {
+const NumberKeyboard = ({ ba, setBa, actualba, setActualba }) => {
 
     const [breakAmount, setBreakAmount] = useState<any>(0);
 
@@ -97,12 +97,12 @@ const NumberKeyboard = ({ ba, setBa }) => {
        
     }
 
-    const getBreakAmount = async () => {
-        const breakAmount = await breakAmountTable.getLastBreakAmount();
-        if (breakAmount !== null) {
-            setBreakAmount(breakAmount);
-        }
-    }
+    // const getBreakAmount = async () => {
+    //     const breakAmount = await breakAmountTable.getLastBreakAmount();
+    //     if (breakAmount !== null) {
+    //         setBreakAmount(breakAmount);
+    //     }
+    // }
 
     const getAllNumbers = () => {
         numbersTable.getNumbers(setnumbers_data);
@@ -141,7 +141,7 @@ const NumberKeyboard = ({ ba, setBa }) => {
     }, [number, amount]);
 
     useEffect(() => {
-        getBreakAmount();
+     
         getAllNumbers();
     },[]);
 
@@ -156,13 +156,15 @@ const NumberKeyboard = ({ ba, setBa }) => {
         let amount = filter.length > 0 ? filter.reduce((sum, item) => sum + parseInt((item?.amount || 0)), 0) : 0;
 
 
-        let result = parseInt(breakAmount) - (parseInt(amount) + parseInt(amount2));
+        let result = parseInt(filter[0]?.breakamount) - (parseInt(amount) + parseInt(amount2));
         console.log(result)
         if (result > 0) {
             setBa(result);
+            setActualba(filter[0]?.breakamount)
+
         } else { setBa(0); }
 
-    }, [number, numbers_data, breakAmount, cart]);
+    }, [number, numbers_data, cart]);
 
     useEffect(() => {
         getAllNumbers();
@@ -200,8 +202,8 @@ const NumberKeyboard = ({ ba, setBa }) => {
                     <View style={{ flexDirection: 'col', flexWrap: 'wrap', justifyContent: 'center' }}>
                         {rnumberslist.map((item: any, index: number) => (
                             <View key={index} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f0f0f0', padding: 10, marginTop: 5, borderRadius: 15 }}>
-                                <Text style={{ ...STYLES.title, color:parseInt(item.amount) >= parseInt(breakAmount) ? 'red' :'black' }}>{item.number}</Text>
-                                <Text style={{ ...STYLES.title , color:parseInt(item.amount) >= parseInt(breakAmount) ? 'red' :'black' }}>{item.amount}</Text>
+                                <Text style={{ ...STYLES.title, color:parseInt(item.amount) >= parseInt(item.breakamount) ? 'red' :'black' }}>{item.number}</Text>
+                                <Text style={{ ...STYLES.title , color:parseInt(item.amount) >= parseInt(item.breakamount) ? 'red' :'black' }}>{item.amount}</Text>
                             </View>
                         ))}
                     </View>

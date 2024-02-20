@@ -3,7 +3,7 @@ import SQLite from 'react-native-sqlite-storage';
 
 const db = SQLite.openDatabase(
     {
-        name: 'test4.db',
+        name: 'test5.db',
         location: 'default',
     },
     () => {

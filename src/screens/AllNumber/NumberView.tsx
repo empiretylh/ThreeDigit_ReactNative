@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useLayoutEffect } from 'react';
 import { View, Text, StyleSheet, Button, TouchableOpacity, TextInput, FlatList, Vibration } from 'react-native';
 import salesTable from '../../Database/salesTable';
 import numbersTable from '../../Database/numbersTable';
@@ -10,6 +10,7 @@ import { MessageModalNormal } from '../MessageModal';
 const NumberView = ({ navigation }) => {
 
     const [numbers, setNumbers] = useState<any>([]);
+    const [showba, setshowBa] =  useState(false);
     const [ba, setBa] = useState<any>([]);
 
     const [baeditvalue, setbaEditValue] = useState<any>('');
@@ -17,8 +18,10 @@ const NumberView = ({ navigation }) => {
     const baRef: any = useRef(null)
 
     const getBreakAmount = async () => {
-        let ba = await breakAmountTable.getLastBreakAmount();
-        setBa(ba);
+        if(numbers.length > 0){
+            setBa(numbers[0].breakamount);
+        }
+       
     }
 
 
@@ -45,19 +48,23 @@ const NumberView = ({ navigation }) => {
             return n.sort((a: any, b: any) => b.amount - a.amount);
         }
         if (filterType == 'minus-amount-asc') {
-            return n.sort((a: string, b: string) => computeExtraAmount(parseInt(a.amount),ba) - computeExtraAmount(parseInt(b.amount),ba));
+            return n.sort((a: any, b: any) => computeExtraAmount(parseInt(a.amount),parseInt(a.breakamount)) - computeExtraAmount(parseInt(b.amount),parseInt(b.breakamount)));
         }
         if (filterType == 'minus-amount-desc') {
-            return n.sort((a: any, b: any) =>computeExtraAmount(parseInt(b.amount), ba) - computeExtraAmount(parseInt(a.amount), ba));
+            return n.sort((a: any, b: any) =>computeExtraAmount(parseInt(b.amount), parseInt(b.breakamount)) - computeExtraAmount(parseInt(a.amount), parseInt(a.breakamount)));
         }
-    }
-        , [filterType, numbers, searchText]);
+    } , [filterType, numbers, searchText]);
 
 
     useEffect(() => {
-        getBreakAmount();
         numbersTable.getNumbers(setNumbers);
     }, []);
+
+    useEffect(() => {
+        getBreakAmount();
+    },[numbers]);
+
+
 
     useEffect(() => {
         if (baEditShow) {
@@ -70,12 +77,10 @@ const NumberView = ({ navigation }) => {
         if (baeditvalue == '') {
             return;
         }
-        let ba = await breakAmountTable.getLastBreakAmount();
-        if (ba == baeditvalue) {
-            return;
-        }
-        await breakAmountTable.insertBreakAmount(baeditvalue);
+       
+        await numbersTable.setBreakAmountToAll(baeditvalue);
         setbaEditShow(false);
+        numbersTable.getNumbers(setNumbers);
         getBreakAmount();
     }
 
@@ -84,7 +89,8 @@ const NumberView = ({ navigation }) => {
             <TouchableOpacity onPress={()=>{ navigation.navigate('NumberDetail',{number: item.number}); Vibration.vibrate(100)}} key={index} style={{ flexDirection: 'row', padding: 10, backgroundColor: 'white', borderWidth: 1 }}>
                 <Text style={{ ...STYLES.title, fontSize: 25, flex: 1, textAlign: 'center' }}>{item.number}</Text>
                 <Text style={{ ...STYLES.title, fontSize: 25, flex: 1, textAlign: 'right' }}>{numberWithCommas(item.amount)}</Text>
-                <Text style={{ ...STYLES.title, fontSize: 25, flex: 1, textAlign: 'right', color: parseInt(item.amount) > parseInt(ba) ? 'red' : 'black' }}>{numberWithCommas(computeExtraAmount(item.amount, ba))}</Text>
+                <Text style={{ ...STYLES.title, fontSize: 25, flex: 1, textAlign: 'right', color: parseInt(item.amount) > parseInt(item.breakamount) ? 'red' : 'black' }}>{numberWithCommas(computeExtraAmount(item.amount, item.breakamount))}</Text>
+                {showba ? <Text style={{ ...STYLES.title, fontSize: 25, flex: 1, textAlign: 'right', color: parseInt(item.amount) > parseInt(item.breakamount) ? 'red' : 'black' }}>{numberWithCommas(item.breakamount)}</Text>:null}
             </TouchableOpacity>
         )
     }
@@ -184,6 +190,9 @@ const NumberView = ({ navigation }) => {
                 <TouchableOpacity onPress={() => setFilterShow(true)} style={{ ...STYLES.button, backgroundColor: '#f0f0f0', marginLeft: 5 }}>
                     <Icons name="filter" size={20} color="black" />
                 </TouchableOpacity>
+                <TouchableOpacity onPress={() => setshowBa(prev=> !prev)} style={{ ...STYLES.button, backgroundColor: showba ? 'green' : '#f0f0f0', marginLeft: 5 }}>
+                    <Icons name="eye" size={20} color={showba ? 'white' : 'black'} />
+                </TouchableOpacity>
             </View>
 
 
@@ -191,6 +200,7 @@ const NumberView = ({ navigation }) => {
                 <Text style={{ ...STYLES.title, fontSize: 20, flex: 1, textAlign: 'center' }}>Number</Text>
                 <Text style={{ ...STYLES.title, fontSize: 20, flex: 1, textAlign: 'center' }}>Amount</Text>
                 <Text style={{ ...STYLES.title, fontSize: 20, flex: 1, textAlign: 'center' }}>Extra</Text>
+               {showba ? <Text style={{ ...STYLES.title, fontSize: 20, flex: 1, textAlign: 'center' }}>Break</Text> : null}
             </View>
             <View style={{ flex: 1, backgroundColor: '#f0f0f0' }}>
                 <FlatList
@@ -207,7 +217,9 @@ export default NumberView;
 
 
 const computeExtraAmount = (amount: number, ba: number) => {
+   
     if (amount > ba) {
+        console.log("Break amount Compute :", ba , amount, amount - ba);
         return amount - ba;
     }
     return 0;

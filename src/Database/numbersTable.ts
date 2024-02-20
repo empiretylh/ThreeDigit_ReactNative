@@ -9,7 +9,8 @@ const createNumbersTable = () => {
                 `CREATE TABLE IF NOT EXISTS numbers (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         number TEXT UNIQUE,
-                        amount INTEGER default 0
+                        amount INTEGER default 0,
+                        breakamount INTEGER default 0
                 )`,
                 [],
                 () => {
@@ -164,5 +165,74 @@ const getAmountByNumber = (number: string) => {
     );
 }
 
-    const numbersTable = { createNumbersTable, insertNumbers, getNumbers,getNumbersAsync, getAmountByNumber, updateAmount, updateAmountMinus, RemoveAllAmount };
+const setBreakAmount = (number: string, amount: number) => {
+    if (db) {
+        db.transaction((tx) => {
+            tx.executeSql(
+                `UPDATE numbers SET breakamount = ? WHERE number = ?`,
+                [amount, number],
+                () => {
+                    console.log('Amount updated');
+                },
+                (error) => {
+                    console.log(error);
+                }
+            );
+        });
+    }
+};
+
+    const setBreakAmountToAll = (amount: number) => {
+        if (db) {
+            db.transaction((tx) => {
+                tx.executeSql(
+                    `UPDATE numbers SET breakamount = ?`,
+                    [amount],
+                    () => {
+                        console.log('Amount updated');
+                    },
+                    (error) => {
+                        console.log(error);
+                    }
+                );
+            });
+        }
+    }
+
+// get the most frequent break amount
+const getFrequencyBreakAmount = (setNumbers: any) => {
+    if (db) {
+        db.transaction((tx) => {
+            tx.executeSql(
+                `SELECT breakamount, COUNT(*) as frequency FROM numbers GROUP BY breakamount ORDER BY frequency DESC LIMIT 1`,
+                [],
+                (_, { rows }) => {
+                    setNumbers(rows.raw);
+                },
+                (error) => {
+                    console.log(error);
+                }
+            );
+        });
+    }
+}
+
+const getBreakAmountByNumber = (number: string, setNumber : any) => {
+    if (db) {
+        db.transaction((tx) => {
+            tx.executeSql(
+                `SELECT breakamount FROM numbers WHERE number = ?`,
+                [number],
+                (_, { rows }) => {
+                    setNumber(rows.raw);
+                },
+                (error) => {
+                    console.log(error);
+                }
+            );
+        });
+    }
+}
+
+    const numbersTable = { createNumbersTable, insertNumbers, getNumbers,getBreakAmountByNumber,getNumbersAsync,getFrequencyBreakAmount, setBreakAmount, setBreakAmountToAll, getAmountByNumber, updateAmount, updateAmountMinus, RemoveAllAmount };
     export default numbersTable;

@@ -10,6 +10,7 @@ import { useSale } from '../../context/SaleProvider';
 import customerTable from '../../Database/customerTable';
 import { MessageModalNormal } from '../MessageModal';
 import breakAmountTable from '../../Database/breakamount';
+import numbersTable from '../../Database/numbersTable';
 
 const SaleView = ({navigation}) => {
 
@@ -20,13 +21,9 @@ const SaleView = ({navigation}) => {
 
     const [breakamount, setBreakAmount] = react.useState(0);
     const [actualba, setActualba] = react.useState(0);
+    const [numbers, setNumber] = react.useState([]);
 
 
-    const getBreakAmount = () => {
-       breakAmountTable.getLastBreakAmount().then((data: any) => {
-            setActualba(parseInt(data));
-        });
-    }
 
 
     const { cart, clearCart }: any = useSale();
@@ -44,7 +41,7 @@ const SaleView = ({navigation}) => {
     useEffect(() => {
         getLastVoucherNumber();
         getAllCustomer();
-        getBreakAmount();
+        // getBreakAmount();
     }, [])
 
     const SaveToDatabase = () => {
@@ -155,7 +152,7 @@ const SaleView = ({navigation}) => {
 
             <SaleTable />
 
-            <NumberKeyboard ba={breakamount} setBa={setBreakAmount}/>
+            <NumberKeyboard ba={breakamount} setBa={setBreakAmount} actualba={actualba} setActualba={setActualba}/>
         </View>
     )
 }
