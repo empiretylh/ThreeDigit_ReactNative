@@ -1,13 +1,17 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { View, Text, Image, TouchableOpacity, Alert } from 'react-native';
 import Icons from 'react-native-vector-icons/Ionicons';
 import { STYLES } from '../../config/config';
 import ViewShot from "react-native-view-shot";
 import EncryptedStorage from 'react-native-encrypted-storage';
 import { BLEPrinter } from 'react-native-thermal-receipt-printer-image-qr';
+import Slider from 'react-native-slider';
+
 const VoucherView = ({ navigation, route }) => {
 
     const { customer, vcno, number } = route.params;
+
+    const [initFontSize, setInitFontSize] = React.useState(0.5);
 
     const computePermutLength = (str: string) => {
         let num = getPermutations(str);
@@ -67,7 +71,7 @@ const VoucherView = ({ navigation, route }) => {
             });
         });
 
-     
+
 
 
     };
@@ -84,6 +88,27 @@ const VoucherView = ({ navigation, route }) => {
         })
         return total;
     }, [number])
+
+    const getFontSize = async () => {
+        let fs = await EncryptedStorage.getItem('fontSize');
+        if (fs == null) {
+            fs = 0;
+        }
+        setInitFontSize(parseInt(fs));
+    }
+
+    const changeFontSize = (value: number) => {
+        console.log(value)
+        setInitFontSize(value * 100);
+        let mul = value * 100;
+
+        EncryptedStorage.setItem('fontSize', mul.toString());
+    }
+
+    useEffect(() => {
+        getFontSize();
+
+    }, [])
 
 
     return (
@@ -113,11 +138,15 @@ const VoucherView = ({ navigation, route }) => {
                 </TouchableOpacity>
 
             </View>
+            <View style={{ padding: 15 }}>
+                <Text style={{ ...STYLES.bold_text }}>Font Size  : {parseInt(initFontSize,10)} %</Text>
+                <Slider value={initFontSize/100} min={0} max={1} step={0.05} onValueChange={(value) => changeFontSize(value)} />
+            </View>
 
-            <ViewShot ref={viewRef} style={{backgroundColor:'white', margin:15}} >
+            <ViewShot ref={viewRef} style={{ backgroundColor: 'white', margin: 15 }} >
                 <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
                     <Text style={{
-                        fontSize: 40,
+                        fontSize: 40 + computeFont(initFontSize),
                         fontWeight: 'bold',
                         color: 'black',
                         textAlign: 'center',
@@ -127,14 +156,14 @@ const VoucherView = ({ navigation, route }) => {
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginHorizontal: 15, alignItems: 'center' }}>
                     <View style={{ flexDirection: 'column', padding: 10 }}>
                         <Text style={{
-                            fontSize: 18,
+                            fontSize: 18 + computeFont(initFontSize),
                             fontWeight: 'bold',
                             color: 'black',
                             textAlign: 'left',
 
                         }}>{customer}</Text>
                         <Text style={{
-                            fontSize: 18,
+                            fontSize: 18 + computeFont(initFontSize),
                             fontWeight: 'bold',
                             color: 'black',
                             textAlign: 'left',
@@ -144,14 +173,14 @@ const VoucherView = ({ navigation, route }) => {
 
                     <View style={{ flexDirection: 'column', padding: 10 }}>
                         <Text style={{
-                            fontSize: 20,
+                            fontSize: 20 + computeFont(initFontSize),
                             fontWeight: 'bold',
                             color: 'black',
                             textAlign: 'right',
 
                         }}>Voucher Number  : {vcno}</Text>
                         <Text style={{
-                            fontSize: 18,
+                            fontSize: 18 + computeFont(initFontSize),
                             fontWeight: 'bold',
                             color: 'black',
                             textAlign: 'right',
@@ -164,7 +193,7 @@ const VoucherView = ({ navigation, route }) => {
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginHorizontal: 15, alignItems: 'center' }}>
                     <Text style={{
                         flex: 1,
-                        fontSize: 30,
+                        fontSize: 30 + computeFont(initFontSize),
                         fontWeight: 'bold',
                         color: 'black',
                         textAlign: 'center',
@@ -174,7 +203,7 @@ const VoucherView = ({ navigation, route }) => {
 
                     <Text style={{
                         flex: 1,
-                        fontSize: 30,
+                        fontSize: 30 + computeFont(initFontSize),
                         fontWeight: 'bold',
                         color: 'black',
                         textAlign: 'center',
@@ -188,7 +217,7 @@ const VoucherView = ({ navigation, route }) => {
                         <View key={index} style={{ flexDirection: 'row', marginTop: 8, justifyContent: 'space-between', marginHorizontal: 20, alignItems: 'center' }}>
                             <Text style={{
                                 flex: 1,
-                                fontSize: 30,
+                                fontSize: 30 + computeFont(initFontSize),
                                 fontWeight: 'bold',
                                 color: 'black',
                                 textAlign: 'center',
@@ -198,7 +227,7 @@ const VoucherView = ({ navigation, route }) => {
 
                             <Text style={{
                                 flex: 1,
-                                fontSize: 30,
+                                fontSize: 30 + computeFont(initFontSize),
                                 fontWeight: 'bold',
                                 color: 'black',
                                 textAlign: 'center',
@@ -215,7 +244,7 @@ const VoucherView = ({ navigation, route }) => {
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginHorizontal: 15, alignItems: 'center' }}>
                     <Text style={{
                         flex: 1,
-                        fontSize: 30,
+                        fontSize: 30 + computeFont(initFontSize),
                         fontWeight: 'bold',
                         color: 'black',
                         textAlign: 'center',
@@ -225,7 +254,7 @@ const VoucherView = ({ navigation, route }) => {
 
                     <Text style={{
                         flex: 1,
-                        fontSize: 30,
+                        fontSize: 30 + computeFont(initFontSize),
                         fontWeight: 'bold',
                         color: 'black',
                         textAlign: 'center',
@@ -233,14 +262,35 @@ const VoucherView = ({ navigation, route }) => {
                     }}>{computeTotal}</Text>
                 </View>
 
-                <View style={{marginBottom:20}}>
-                    <Text style={{ fontSize: 20, textAlign: 'center', fontWeight: 'bold', color: 'black', marginTop: 15 }}>
+                <View style={{ marginBottom: 100 }}>
+                    <Text style={{ fontSize: 20 + computeFont(initFontSize), textAlign: 'center', fontWeight: 'bold', color: 'black', marginTop: 15 }}>
                         ဘောင်ချာပျောက်လျှင်တာဝန်မယူပါ။
                     </Text>
                 </View>
             </ViewShot>
         </View>
     );
+}
+
+function computeFont(perctange : number){
+    // 50 to 0 is 0 to -50
+    // 50 to 100 is 0 to +50
+
+    if(perctange == 50){
+        return 0;
+    }
+
+    if(perctange > 50){
+        return perctange - 50;
+    }
+
+    if(perctange < 50){
+        return perctange - 50;
+    }
+
+
+    return perctange;
+
 }
 
 
