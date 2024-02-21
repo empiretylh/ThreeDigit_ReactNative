@@ -92,9 +92,9 @@ const VoucherView = ({ navigation, route }) => {
     const getFontSize = async () => {
         let fs = await EncryptedStorage.getItem('fontSize');
         if (fs == null) {
-            fs = 0;
+            fs = 0.5;
         }
-        setInitFontSize(parseInt(fs));
+        setInitFontSize(parseFloat(fs));
     }
 
     const changeFontSize = (value: number) => {
@@ -127,7 +127,7 @@ const VoucherView = ({ navigation, route }) => {
                 <TouchableOpacity onPress={() => navigation.goBack()} style={{ justifyContent: 'center', alignItems: 'center', padding: 5, margin: 5, borderRadius: 10 }}>
                     <Icons name="arrow-back" size={30} color="black" />
                 </TouchableOpacity>
-                <Text style={{ ...STYLES.title, fontSize: 25 }}>All Report</Text>
+                <Text style={{ ...STYLES.title, fontSize: 25 }}>Voucher</Text>
 
                 {/* print button  */}
                 <TouchableOpacity onPress={() => {
@@ -153,7 +153,7 @@ const VoucherView = ({ navigation, route }) => {
                         margin: 10
                     }}>မင်္ဂလာပါ</Text>
                 </View>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginHorizontal: 15, alignItems: 'center' }}>
+                <View style={{ flexDirection: 'row', flexWrap:'warp' ,justifyContent: 'space-between', marginHorizontal: 15, alignItems: 'center' }}>
                     <View style={{ flexDirection: 'column', padding: 10 }}>
                         <Text style={{
                             fontSize: 18 + computeFont(initFontSize),
@@ -163,24 +163,24 @@ const VoucherView = ({ navigation, route }) => {
 
                         }}>{customer}</Text>
                         <Text style={{
-                            fontSize: 18 + computeFont(initFontSize),
+                            fontSize: 16 + computeFont(initFontSize),
                             fontWeight: 'bold',
                             color: 'black',
                             textAlign: 'left',
 
-                        }}>{new Date().toDateString()}</Text>
+                        }}>{new Date().toDateString().slice(4,15)}</Text>
                     </View>
 
                     <View style={{ flexDirection: 'column', padding: 10 }}>
                         <Text style={{
-                            fontSize: 20 + computeFont(initFontSize),
+                            fontSize: 16 + computeFont(initFontSize),
                             fontWeight: 'bold',
                             color: 'black',
                             textAlign: 'right',
 
-                        }}>Voucher Number  : {vcno}</Text>
+                        }}>{initFontSize > 50 ? 'VCNo':'Voucher Number'}  : {vcno}</Text>
                         <Text style={{
-                            fontSize: 18 + computeFont(initFontSize),
+                            fontSize: 16 + computeFont(initFontSize),
                             fontWeight: 'bold',
                             color: 'black',
                             textAlign: 'right',
