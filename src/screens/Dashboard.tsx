@@ -4,8 +4,7 @@ import { View, Button } from '@ant-design/react-native';
 import { IMAGE, STYLES, appname } from '../config/config';
 import salesTable from '../Database/salesTable';
 import numbersTable from '../Database/numbersTable';
-import RNHTMLtoPDF from 'react-native-html-to-pdf';
-import FileViewer from 'react-native-file-viewer';
+
 import Icons from 'react-native-vector-icons/Ionicons';
 import { BLEPrinter } from 'react-native-thermal-receipt-printer-image-qr';
 
@@ -49,32 +48,7 @@ const Dashboard: React.FC = ({ navigation }) => {
 
 
 
-    const exportPDFNumberTable = async () => {
-
-        let numbers = await numbersTable.getNumbersAsync();
-
-        console.log(numbers);
-
-        let options = {
-            html: '<div align="center"><table border="1"><tr><th>Number</th><th>Amount</th></tr>' + numbers.map((item: any) => {
-                return '<tr><td>' + item.number + '</td><td>' + item.amount + '</td></tr>'
-            }).join('') + '</table></div>',
-            fileName: 'Number',
-            directory: 'Documents',
-        };
-
-        let file = await RNHTMLtoPDF.convert(options);
-
-        FileViewer.open(file.filePath)
-            .then(() => {
-                // success
-            })
-            .catch(error => {
-                // error
-            });
-    }
-
-
+   
 
     const DeleteAll = () => {
         Alert.alert('Delete All', 'Are you sure to delete all data?', [
@@ -238,7 +212,9 @@ const Dashboard: React.FC = ({ navigation }) => {
                     flex: 1,
                     height: 100,
                 }}
-                    onPress={exportPDFNumberTable}
+                    onPress={()=>{
+                        navigation.navigate('ExportPDF');
+                    }}
                 >
                     <Icons name="document-text-outline" size={30} color="white" />
                     <Text style={{ ...STYLES.title, color: 'white', textAlign: 'center' }}>PDF</Text>

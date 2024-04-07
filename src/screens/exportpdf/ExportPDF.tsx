@@ -1,130 +1,116 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, Button, TouchableOpacity, TextInput, FlatList, Dimensions } from 'react-native';
+import React, { useState, useMemo, useRef, useEffect, useLayoutEffect } from 'react';
+import { View, Text, StyleSheet, Button, TouchableOpacity, TextInput, FlatList, Vibration, PermissionsAndroid, ActivityIndicator, ToastAndroid, Alert } from 'react-native';
 import salesTable from '../../Database/salesTable';
 import numbersTable from '../../Database/numbersTable';
 import Icons from 'react-native-vector-icons/Ionicons';
 import { STYLES } from '../../config/config';
-import breakAmountTable from '../../Database/breakamount';
-import { MessageModalNormal } from '../MessageModal';
-import DatePicker from 'react-native-date-picker'
+import RNHTMLtoPDF from 'react-native-html-to-pdf';
+import FileViewer from 'react-native-file-viewer';
 
-const AllReport = ({ navigation, route }) => {
+const requestStoragePermission = async () => {
+    try {
+        const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+            {
+                title: "Storage Permission",
+                message: "App needs access to your storage to download PDF",
+                buttonNeutral: "Ask Me Later",
+                buttonNegative: "Cancel",
+                buttonPositive: "OK"
+            }
+        );
+        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+            console.log("You can use the storage");
+        } else {
+            console.log("Storage permission denied");
+        }
+    } catch (err) {
+        console.warn(err);
+    }
+};
+
+const ExportPDF = ({ navigation }) => {
 
     const [numbers, setNumbers] = useState<any>([]);
+    const [removeZero, setRemoveZero] =  useState(false);
+    const [isExporting, setIsExporting] = useState(false);
+    const [baEditShow, setbaEditShow] = useState(false);
+    const baRef: any = useRef(null)
 
-    const [date, setDate] = useState(new Date())
-    const [ByDate, setByDate] = useState(false);
-    const [dateOpen, setDateOpen] = useState(false);
-
-    const [searchText, setSearchText] = useState('');
-    const [filterType, setFilterType] = useState('')
-    const [filterShow, setFilterShow] = useState(false);
 
     const numbersFilter = useMemo(() => {
-
-        let n = numbers;
-        // filter
-        if (filterType == 'number-asc') {
-            n.sort((a: any, b: any) => a.number - b.number);
-        }
-        if (filterType == 'number-desc') {
-            n.sort((a: any, b: any) => b.number - a.number);
-        }
-        if (filterType == 'amount-asc') {
-            n.sort((a: any, b: any) => a.amount - b.amount);
-        }
-        if (filterType == 'amount-desc') {
-            n.sort((a: any, b: any) => b.amount - a.amount);
-        }
-        if (filterType == 'date-asc') {
-            n.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
-        }
-        if (filterType == 'date-desc') {
-            n.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        }
-
-        if (ByDate) {
-            n = n.filter((number: any) => {
-                return new Date(number.date).toDateString() == date.toDateString();
-            });
-        }
-
-        if (searchText == '') return n;
-
-        n = numbers.filter((number: any) => {
-            return number.vcno == searchText;
+        let n = numbers.filter((number: any) => {
+            if (removeZero) {
+                return number.amount > 0;
+            }
+            return true;
         });
-       
 
         return n;
+    } , [removeZero, numbers]);
 
-    }, [numbers, setNumbers, searchText, filterType, ByDate, date ]);
-
-  
-
-
-    const AmountTotal = useMemo(() => {
-        let total = 0;
-        numbersFilter.map((number: any) => {
-            total += number.amount;
-        });
-        return total;
-    }, [numbersFilter]);
 
     useEffect(() => {
-        salesTable.getAllSales(setNumbers);
+        numbersTable.getNumbers(setNumbers);
     }, []);
 
 
 
 
-    let screenWidth = Dimensions.get('window').width;
-    let tableWidth = [screenWidth * 0.25, screenWidth * 0.25, screenWidth * 0.25, screenWidth * 0.25]; // 4 columns
+    useEffect(() => {
+        if (baEditShow) {
+            baRef.current.focus();
 
+        }
+    }, [baEditShow])
+
+    const exportPDFNumberTable = async () => {
+         await requestStoragePermission();
+
+            let options = {
+                html: '<div align="center"><table border="1"><tr><th>Number</th><th>Amount</th></tr>' + numbers.map((item: any) => {
+                    if(removeZero && item.amount == 0) {
+                        return '';
+                    }
+                
+                    return '<tr><td>' + item.number + '</td><td>' + item.amount + '</td></tr>'
+                }).join('') + '</table></div>',
+                fileName: 'Number',
+                directory: 'Documents',
+            };
+
+            setIsExporting(true);
+            
+            let file = await RNHTMLtoPDF.convert(options);
+
+            setIsExporting(false);
+            ToastAndroid.show("PDF Exported : " + file.filePath, ToastAndroid.SHORT);
+            Alert.alert('PDF Exported', 'You file is exported in ' + file.filePath);
+
+            FileViewer.open(file.filePath)
+                .then(() => {
+                   
+                })
+                .catch(error => {
+                    // error
+                });
+
+    
+    }
+  
 
     const RenderNumberItem = (item: any, index: number) => {
         return (
-            <View key={index} style={{ flexDirection: 'row', padding: 10, backgroundColor: 'white', borderWidth: 1 }}>
-                <Text style={{ ...STYLES.title, fontSize: 25, width: tableWidth[0], flex: 1, textAlign: 'center' }}>{item.number}</Text>
-                <Text style={{ ...STYLES.title, fontSize: 25, width: tableWidth[1], flex: 1, textAlign: 'right' }}>{numberWithCommas(item.amount)}</Text>
-                <Text style={{ ...STYLES.title, fontSize: 25, width: tableWidth[2], flex: 1, textAlign: 'center', color: 'black' }}>{item.vcno}</Text>
-                <Text style={{ ...STYLES.title, fontSize: 20, width: tableWidth[3], flex: 1, textAlign: 'center', color: 'black' }}>{new Date(item.date).toDateString()}</Text>
-
-            </View>
+            <TouchableOpacity  key={index} style={{ flexDirection: 'row', padding: 10, backgroundColor: 'white', borderWidth: 1 }}>
+                <Text style={{ ...STYLES.title, fontSize: 25, flex: 1, textAlign: 'center' }}>{item.number}</Text>
+                <Text style={{ ...STYLES.title, fontSize: 25, flex: 1, textAlign: 'right' }}>{numberWithCommas(item.amount)}</Text>
+                </TouchableOpacity>
         )
     }
 
-
-
     return (
         <View style={{ flex: 1, backgroundColor: '#f0f0f0' }}>
-            <MessageModalNormal
-                show={filterShow}
-                onClose={() => setFilterShow(false)}
-            >
-                <View>
-                    <Text style={{ ...STYLES.title, fontSize: 20, textAlign: 'left' }}>Filter Type</Text>
-                    <TouchableOpacity onPress={() => { setFilterType('number-asc'); setFilterShow(false) }} style={{ ...STYLES.button, backgroundColor: filterType == 'number-asc' ? '#9cd9be' : '#f0f0f0', margin: 5 }}>
-                        <Text style={{ ...STYLES.title, fontSize: 18, color: 'black' }}>Number Ascending</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => { setFilterType('number-desc'); setFilterShow(false) }} style={{ ...STYLES.button, backgroundColor: filterType == 'number-desc' ? '#9cd9be' : '#f0f0f0', margin: 5 }}>
-                        <Text style={{ ...STYLES.title, fontSize: 18, color: 'black' }}>Number Descending</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => { setFilterType('amount-asc'); setFilterShow(false) }} style={{ ...STYLES.button, backgroundColor: filterType == 'amount-asc' ? '#9cd9be' : '#f0f0f0', margin: 5 }}>
-                        <Text style={{ ...STYLES.title, fontSize: 18, color: 'black' }}>Amount Ascending</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => { setFilterType('amount-desc'); setFilterShow(false) }} style={{ ...STYLES.button, backgroundColor: filterType == 'amount-desc' ? '#9cd9be' : '#f0f0f0', margin: 5 }}>
-                        <Text style={{ ...STYLES.title, fontSize: 18, color: 'black' }}>Amount Descending</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => { setFilterType('date-asc'); setFilterShow(false) }} style={{ ...STYLES.button, backgroundColor: filterType == 'date-asc' ? '#9cd9be' : '#f0f0f0', margin: 5 }}>
-                        <Text style={{ ...STYLES.title, fontSize: 18, color: 'black' }}>Date Ascending</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => { setFilterType('date-desc'); setFilterShow(false) }} style={{ ...STYLES.button, backgroundColor: filterType == 'date-desc' ? '#9cd9be' : '#f0f0f0', margin: 5 }}>
-                        <Text style={{ ...STYLES.title, fontSize: 18, color: 'black' }}>Date Descending</Text>
-                    </TouchableOpacity>
-                </View>
-            </MessageModalNormal>
-
+           
             <View style={{
                 flexDirection: 'row',
                 alignItems: 'center',
@@ -136,11 +122,18 @@ const AllReport = ({ navigation, route }) => {
                 shadowRadius: 3.84,
                 elevation: 5
             }}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={{ justifyContent: 'center', alignItems: 'center', padding: 5, margin: 5, borderRadius: 10 }}>
+                <TouchableOpacity onPress={() => {navigation.goBack(); Vibration.vibrate(100)}} style={{ justifyContent: 'center', alignItems: 'center', padding: 5, margin: 5, borderRadius: 10 }}>
                     <Icons name="arrow-back" size={30} color="black" />
                 </TouchableOpacity>
-                <Text style={{ ...STYLES.title, fontSize: 25 }}>Export PDF</Text>
-                <Text style={{ ...STYLES.title, fontSize: 20, marginLeft: 'auto', marginRight: 5 }}>Total Amount : {numberWithCommas(AmountTotal)}</Text>
+                <Text style={{ ...STYLES.title, fontSize: 20 }}>Export PDF</Text>
+
+                <View style={{ marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', backgroundColor: '#f0f0f0', padding: 10 }}>
+                    <TouchableOpacity style={{flexDirection:'row',alignItems:'center'}} onPress={() => exportPDFNumberTable()}>
+
+                   {isExporting ? <ActivityIndicator size={'small'} color="black"/>:     <Icons name="document-outline" size={30} color="black" />}
+                        <Text style={{ ...STYLES.title, fontSize: 20 }}>Export PDF</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
 
             {/* Search bar and filter button */}
@@ -148,51 +141,16 @@ const AllReport = ({ navigation, route }) => {
                 <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
                    
                 </View>
-
-                <TouchableOpacity style={{ ...STYLES.button, backgroundColor: 'green', marginLeft: 2 }}>
-                    <Icons name="search" size={20} color="white" />
+                <TouchableOpacity onPress={() => setRemoveZero(prev=> !prev)} style={{ ...STYLES.button, backgroundColor: removeZero ? 'green' : '#f0f0f0', marginLeft: 5 }}>
+                    <Icons name="close-circle-outline" size={20} color={removeZero ? 'white' : 'black'} />
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => setFilterShow(true)} style={{ ...STYLES.button, backgroundColor: 'green', marginLeft: 2 }}>
-                    <Icons name="filter" size={20} color="white" />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => setDateOpen(true)} style={{ ...STYLES.button, backgroundColor: 'green', marginLeft: 2 }}>
-                    <Icons name="calendar" size={20} color="white" />
-                </TouchableOpacity>
-                <DatePicker
-                    modal
-                    mode="date"
-                    open={dateOpen}
-                    date={date}
-                    onConfirm={(date) => {
-                        console.log(date)
-                        setDate(date)
-                        setDateOpen(false);
-                        setByDate(true);
-                      
-                    }
-                    }
-                    onCancel={() => { setDateOpen(false); setByDate(false) }}
-                    
-                    onDateChange={(date) => {
-                        console.log(date)
-                        setDate(date)
-                        setDateOpen(false);
-                        setByDate(true);
-                    }}
-               
-               />
-
             </View>
 
 
             <View style={{ flexDirection: 'row', padding: 5, backgroundColor: 'white', margin: 5, borderRadius: 10 }}>
-                <Text style={{ ...STYLES.title, fontSize: 20, flex: 1, width: tableWidth[0], textAlign: 'center' }}>Number</Text>
-                <Text style={{ ...STYLES.title, fontSize: 20, flex: 1, width: tableWidth[0], textAlign: 'center' }}>Amount</Text>
-                <Text style={{ ...STYLES.title, fontSize: 20, flex: 1, width: tableWidth[0], textAlign: 'center' }}>VCNo</Text>
-                <Text style={{ ...STYLES.title, fontSize: 20, flex: 1, width: tableWidth[0], textAlign: 'center' }}>Date</Text>
-
-            </View>
-
+                <Text style={{ ...STYLES.title, fontSize: 20, flex: 1, textAlign: 'center' }}>Number</Text>
+                <Text style={{ ...STYLES.title, fontSize: 20, flex: 1, textAlign: 'center' }}>Amount</Text>
+             </View>
             <View style={{ flex: 1, backgroundColor: '#f0f0f0' }}>
                 <FlatList
                     data={numbersFilter}
@@ -204,11 +162,13 @@ const AllReport = ({ navigation, route }) => {
     )
 }
 
-export default AllReport;
+export default ExportPDF;
 
 
 const computeExtraAmount = (amount: number, ba: number) => {
+   
     if (amount > ba) {
+        console.log("Break amount Compute :", ba , amount, amount - ba);
         return amount - ba;
     }
     return 0;

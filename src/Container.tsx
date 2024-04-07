@@ -15,6 +15,7 @@ import VoucherView from './screens/Voucher/VoucherView';
 import PrinterView from './screens/Printer/PrinterView';
 import Login from './screens/Login';
 import LoginProvider, { useLogin } from './context/LoginProvider';
+import ExportPDF from './screens/exportpdf/ExportPDF';
 
 
 const Stack = createStackNavigator();
@@ -42,6 +43,7 @@ const Container = () => {
           <Stack.Screen name="ByCustomerDetail" component={ByCustomerDetail} />
           <Stack.Screen name="VoucherView" component={VoucherView} />
           <Stack.Screen name="PrinterView" component={PrinterView} />
+          <Stack.Screen name="ExportPDF" component={ExportPDF} />
         </>
         }
       </Stack.Navigator>
